@@ -86,3 +86,68 @@ def test_missing_file(capsys):
     argv = ["gap", "--results", "nope.csv", "--meta", "nope.csv", "--cutoff", "2024-01-01"]
     code, out = run(capsys, argv)
     assert code == 2
+
+
+def test_strata_command(files, capsys):
+    _, base = files
+    argv = ["strata", *base, "--cutoff", "2024-01-01", "--strata", "source", "--system", "sys-0"]
+    code, out = run(capsys, argv)
+    assert code == 0
+    assert "MH odds ratio" in out.out and "| source-0 |" in out.out
+    code, out = run(capsys, ["strata", *base, "--cutoff", "2024-01-01"])
+    assert code == 2 and "--strata" in out.err
+
+
+def test_did_command_json_is_seeded(files, capsys):
+    _, base = files
+    argv = ["did", *base, "--cutoff", "2024-01-01", "--boot", "200", "--format", "json"]
+    _, first = run(capsys, argv)
+    _, second = run(capsys, argv)
+    assert first.out == second.out
+    payload = json.loads(first.out)
+    assert len(payload) == 5 and payload[0]["did"] < 0
+    clustered = ["did", *base, "--cutoff", "2024-01-01", "--boot", "200", "--cluster"]
+    code, out = run(capsys, clustered)
+    assert code == 2
+    code, out = run(capsys, [*clustered, "--strata", "source"])
+    assert code == 0 and "strata of `source`" in out.out
+
+
+def test_adjust_and_summary_commands(files, capsys):
+    _, base = files
+    code, out = run(capsys, ["adjust", *base, "--cutoff", "2024-01-01", "--robust"])
+    assert code == 0 and "after coefficient (log-odds)" in out.out
+    code, out = run(capsys, ["summary", *base, "--cutoff", "2024-01-01", "--boot", "200"])
+    assert code == 0 and "removed %" in out.out
+    assert len(out.out.strip().splitlines()) == 2 + 2 + 5
+    code, out = run(
+        capsys, ["summary", *base, "--cutoff", "2024-12-20", "--boot", "50", "--format", "json"]
+    )
+    assert code == 0
+    assert json.loads(out.out)[0]["gap"]["reported"] is False
+    code, out = run(capsys, ["summary", *base, "--cutoff", "2024-12-20", "--boot", "50"])
+    assert "Not reported" in out.out
+
+
+def test_scan_command(files, capsys):
+    _, base = files
+    argv = ["scan", *base, "--system", "sys-0", "--perm", "100", "--max-points", "10"]
+    code, out = run(capsys, argv)
+    assert code == 0
+    assert "permutation band" in out.out and "candidate date" in out.out
+    every = ["scan", *base, "--perm", "50", "--max-points", "5", "--format", "json"]
+    code, out = run(capsys, every)
+    assert code == 0 and len(json.loads(out.out)) == 5
+    code, out = run(capsys, [*argv, "--within-strata"])
+    assert code == 2
+    one_sided = [*argv, "--within-strata", "--strata", "source", "--alternative", "drop"]
+    code, out = run(capsys, one_sided)
+    assert code == 0 and "most negative z" in out.out
+
+
+def test_trend_command(files, capsys):
+    _, base = files
+    code, out = run(capsys, ["trend", *base, "--system", "sys-0", "--by", "quarter"])
+    assert code == 0 and out.out.startswith("### sys-0")
+    code, out = run(capsys, ["trend", *base, "--window", "150", "--format", "json"])
+    assert code == 0 and len(json.loads(out.out)) == 5
