@@ -40,10 +40,17 @@ def pval(value: float | None) -> str:
 
 
 def table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
-    """A GitHub-flavoured Markdown table."""
-    lines = ["| " + " | ".join(headers) + " |", "|" + "|".join(" --- " for _ in headers) + "|"]
+    """A GitHub-flavoured Markdown table; pipe characters inside cells are escaped."""
+
+    def cell(value: Any) -> str:
+        return str(value).replace("|", "\\|")
+
+    lines = [
+        "| " + " | ".join(cell(h) for h in headers) + " |",
+        "|" + "|".join(" --- " for _ in headers) + "|",
+    ]
     for row in rows:
-        lines.append("| " + " | ".join(str(cell) for cell in row) + " |")
+        lines.append("| " + " | ".join(cell(value) for value in row) + " |")
     return "\n".join(lines)
 
 

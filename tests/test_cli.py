@@ -151,3 +151,15 @@ def test_trend_command(files, capsys):
     assert code == 0 and out.out.startswith("### sys-0")
     code, out = run(capsys, ["trend", *base, "--window", "150", "--format", "json"])
     assert code == 0 and len(json.loads(out.out)) == 5
+
+
+def test_markdown_cells_escape_pipes():
+    from datecut import report
+
+    text = report.table(["largest |z|", "name"], [[1.5, "a|b"]])
+    lines = text.splitlines()
+    assert lines[0] == "| largest \\|z\\| | name |"
+    assert lines[2] == "| 1.5 | a\\|b |"
+    assert report.pval(None) == "n/a" and report.num(float("nan")) == "n/a"
+    assert report.pct(None) == "n/a" and report.interval(None, 1.0) == "n/a"
+    assert report.to_json({"x": float("inf"), "d": [1.5]}).count("null") == 1
