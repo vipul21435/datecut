@@ -5,7 +5,7 @@
 
 One line per system: the score z of the after-date term at each month-end candidate.
 Dashed lines mark the pointwise 1.96 and the median permutation band for the largest |z|.
-Needs matplotlib (``pip install datecut[plot]``).
+Needs matplotlib (``pip install matplotlib``).
 """
 
 from __future__ import annotations
