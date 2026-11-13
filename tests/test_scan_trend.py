@@ -128,3 +128,11 @@ def test_trend_without_a_pool():
     results, meta = simulate(n_items=50, n_systems=1, seed=12)
     rows = trend(build_table(results, meta).view("sys-0"), window=25)
     assert rows[0].pool_rate is None and rows[0].diff is None
+
+
+def test_one_item_window_has_no_pool_band():
+    results, meta = simulate(n_items=40, n_systems=4, seed=13)
+    rows = trend(build_table(results, meta).view("sys-0"), window=1, step=20)
+    assert rows[0].n == 1
+    assert rows[0].pool_rate is not None
+    assert rows[0].pool_low is None and rows[0].diff_low is None

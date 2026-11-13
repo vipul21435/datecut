@@ -332,7 +332,8 @@ def cmd_trend(args: argparse.Namespace) -> Rendered:
             [
                 w.start.isoformat(), w.end.isoformat(), w.n, report.pct(w.rate),
                 f"{report.pct(w.low)} to {report.pct(w.high)}", report.pct(w.pool_rate),
-                f"{report.pct(w.pool_low)} to {report.pct(w.pool_high)}",
+                f"{report.pct(w.pool_low)} to {report.pct(w.pool_high)}"
+                if w.pool_low is not None else "n/a",
                 report.pct(w.diff, signed=True), report.interval(w.diff_low, w.diff_high),
             ]
             for w in windows

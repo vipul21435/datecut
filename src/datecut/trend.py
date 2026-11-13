@@ -28,10 +28,11 @@ class TrendWindow:
     diff_high: float | None
 
 
-def _mean_band(values: np.ndarray, z: float) -> tuple[float, float, float]:
+def _mean_band(values: np.ndarray, z: float) -> tuple[float, float | None, float | None]:
+    """Mean with a normal interval; no interval for a single value."""
     mean = float(values.mean())
     if values.size < 2:
-        return mean, mean, mean
+        return mean, None, None
     half = z * float(values.std(ddof=1)) / math.sqrt(values.size)
     return mean, mean - half, mean + half
 
@@ -45,7 +46,8 @@ def _window(view: SystemView, idx: np.ndarray, conf: float) -> TrendWindow:
     pool_rate = pool_low = pool_high = diff = diff_low = diff_high = None
     if pool.size:
         pool_rate, pool_low, pool_high = _mean_band(pool, z)
-        pool_low, pool_high = max(0.0, pool_low), min(1.0, pool_high)
+        if pool_low is not None and pool_high is not None:
+            pool_low, pool_high = max(0.0, pool_low), min(1.0, pool_high)
         diff, diff_low, diff_high = _mean_band(y[has_pool] - pool, z)
     return TrendWindow(
         from_day(view.days[idx[0]]), from_day(view.days[idx[-1]]), int(y.size),
