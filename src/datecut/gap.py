@@ -29,14 +29,15 @@ class GapResult:
 
 def too_few(n_before: int, n_after: int, min_side: int) -> str | None:
     """A sentence saying which side is short, or None when both sides have enough items."""
+    floor = max(min_side, 1)
     short = []
-    if n_before < min_side:
+    if n_before < floor:
         short.append(f"{n_before} before")
-    if n_after < min_side:
+    if n_after < floor:
         short.append(f"{n_after} after")
     if not short:
         return None
-    return f"too few items ({' and '.join(short)} the cutoff; --min-side is {min_side})"
+    return f"too few items ({' and '.join(short)} the cutoff; --min-side is {floor})"
 
 
 def plain_gap(

@@ -163,3 +163,43 @@ def test_markdown_cells_escape_pipes():
     assert report.pval(None) == "n/a" and report.num(float("nan")) == "n/a"
     assert report.pct(None) == "n/a" and report.interval(None, 1.0) == "n/a"
     assert report.to_json({"x": float("inf"), "d": [1.5]}).count("null") == 1
+
+
+def test_degenerate_options_are_reported_not_crashed(files, capsys):
+    root, base = files
+    code, out = run(capsys, ["scan", *base, "--system", "sys-0", "--perm", "0"])
+    assert code == 2 and "n_perm" in out.err
+    code, out = run(capsys, ["did", *base, "--cutoff", "2024-01-01", "--boot", "0"])
+    assert code == 2 and "n_boot" in out.err
+    code, out = run(capsys, ["gap", *base, "--cutoff", "2024-01-01", "--conf", "1.5"])
+    assert code == 2 and "conf" in out.err
+    for command in ("gap", "adjust", "did", "summary", "power"):
+        argv = [command, *base, "--cutoff", "2030-01-01", "--min-side", "0", "--system", "sys-0"]
+        code, out = run(capsys, argv)
+        assert code == 0
+    (root / "broken.json").write_text("{not json")
+    argv = ["gap", "--results", str(root / "broken.json"), "--meta", str(root / "meta.csv")]
+    code, out = run(capsys, [*argv, "--cutoff", "2024-01-01"])
+    assert code == 2 and out.err.startswith("datecut:")
+    (root / "empty.csv").write_text("")
+    argv = ["gap", "--results", str(root / "empty.csv"), "--meta", str(root / "meta.csv")]
+    code, out = run(capsys, [*argv, "--cutoff", "2024-01-01"])
+    assert code == 2
+
+
+def test_a_single_system_has_no_pool(files, capsys, tmp_path):
+    root, _ = files
+    lines = (root / "results.csv").read_text().splitlines()
+    only = [lines[0]] + [line for line in lines[1:] if ",sys-0," in line]
+    (tmp_path / "one.csv").write_text("\n".join(only) + "\n")
+    base = ["--results", str(tmp_path / "one.csv"), "--meta", str(root / "meta.csv")]
+    for command in ("adjust", "did", "summary"):
+        code, out = run(capsys, [command, *base, "--cutoff", "2024-01-01"])
+        assert code == 0 and "Not reported" in out.out
+        assert "no item was answered by any other system" in out.out
+    code, out = run(capsys, ["scan", *base, "--perm", "10"])
+    assert code == 0 and "no item was answered by any other system" in out.out
+    code, out = run(capsys, ["gap", *base, "--cutoff", "2024-01-01"])
+    assert code == 0 and "not reported" not in out.out
+    code, out = run(capsys, ["trend", *base, "--by", "year"])
+    assert code == 0 and "n/a" in out.out

@@ -58,6 +58,8 @@ def diff_in_diff(
     one source. The interval is the percentile interval and the p-value is twice the
     smaller tail share of resampled estimates on either side of zero.
     """
+    if n_boot < 1:
+        raise ValueError("n_boot must be at least 1")
     cut = parse_date(cutoff)
     keep = view.pool_n > 0
     post = view.post(cut)[keep]
@@ -73,6 +75,8 @@ def diff_in_diff(
         labels = view.strata[keep]
         n_clusters = len(set(labels.tolist()))
     reason = too_few(n_before, n_after, min_side)
+    if not keep.any():
+        reason = "no item was answered by any other system"
     if reason is None and cluster and n_clusters is not None and n_clusters < 2:
         reason = "clustered resampling needs at least two strata"
     if reason is not None:

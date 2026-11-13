@@ -127,6 +127,8 @@ def scan(
     """
     if alternative not in ("two-sided", "drop"):
         raise ValueError("alternative must be 'two-sided' or 'drop'")
+    if n_perm < 1:
+        raise ValueError("n_perm must be at least 1")
     keep = view.pool_n > 0
     days, y = view.days[keep], view.y[keep]
     n = int(keep.sum())
@@ -138,6 +140,8 @@ def scan(
             None, None, alpha, False, reason,
         )
 
+    if n == 0:
+        return refuse("no item was answered by any other system")
     if cand.size == 0:
         return refuse(f"no candidate date leaves {min_side} items on each side")
     if float(y.min()) == float(y.max()):
