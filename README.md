@@ -231,6 +231,8 @@ for a single date fixed in advance. The largest `|z|` is outside the band for 11
 systems, and for 9 after the Benjamini-Hochberg adjustment across systems. The dates at
 which the largest `|z|` occurs are listed in the results file; they mark where a system's
 standing relative to the pool changes most and are not estimates of a training cutoff.
+This benchmark has strong drift, so the scan limitation described under "Limitations"
+applies: the band is likely somewhat too narrow here.
 
 ![Scan over month-end dates for 28 systems](docs/livecodebench_scan.png)
 
@@ -308,10 +310,18 @@ fetch scripts and derived numbers, not the downloaded files.
 - The logistic model has one difficulty term and no stratum effects; source is handled by
   `strata` and by clustered or within-stratum resampling, not inside the model.
 - The scan's permutation test reassigns dates, which treats the items as exchangeable
-  given difficulty. A seeded check in the test suite runs 200 null datasets with shared
-  drift and asserts that at most 9.6 % of the scans are rejected at the 5 % level (5 %
-  plus three standard errors); it is not an exact test when difficulty and date are
-  strongly related.
+  given the difficulty covariate. When that covariate does not absorb all of a shared
+  drift (the previous point), the scan rejects too often. `python examples/scan_null.py`
+  runs the scan on datasets with 20 systems, 300 items and no system-specific effect:
+
+  | drift (log-odds over the date range) | datasets | rejected at 5 % |
+  | --- | --- | --- |
+  | 0.0 | 400 | 22 (5.5 %) |
+  | 1.0 | 400 | 24 (6.0 %) |
+  | 2.0 | 400 | 46 (11.5 %) |
+
+  On a benchmark with strong drift the band is therefore somewhat too narrow, and a
+  maximum just outside it is weak evidence.
 - For scores that are fractions, sums of scores are used as counts in the Wilson, Newcombe
   and Mantel-Haenszel formulas. The binomial variance is an upper bound for a score in
   [0, 1], so those intervals are approximate and tend to be wide; `--threshold` gives
