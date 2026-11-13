@@ -310,9 +310,10 @@ fetch scripts and derived numbers, not the downloaded files.
 - The logistic model has one difficulty term and no stratum effects; source is handled by
   `strata` and by clustered or within-stratum resampling, not inside the model.
 - The scan's permutation test reassigns dates, which treats the items as exchangeable
-  given the difficulty covariate. When that covariate does not absorb all of a shared
-  drift (the previous point), the scan rejects too often. `python examples/scan_null.py`
-  runs the scan on datasets with 20 systems, 300 items and no system-specific effect:
+  given the difficulty covariate. Its rejection rate rises with the strength of a shared
+  drift, which is what the first point above would produce (a covariate that does not
+  absorb all of the drift). `python examples/scan_null.py` runs the scan on datasets with
+  20 systems, 300 items and no system-specific effect:
 
   | drift (log-odds over the date range) | datasets | rejected at 5 % |
   | --- | --- | --- |
